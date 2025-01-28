@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fast Drive Football Dice Roller</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        select, button, input[type="radio"], input[type="checkbox"] {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .offensive-rating {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Fast Drive Football Dice Roller</h1>
+    <div class="controls">
+        <label for="offense">Offensive Category:</label>
+        <select id="offense">
+            <option value="dull">Dull (Red)</option>
+            <option value="semi-dull">Semi-Dull (Orange)</option>
+            <option value="average">Average (Grey)</option>
+            <option value="semi-prolific">Semi-Prolific (Blue)</option>
+            <option value="prolific">Prolific (Green)</option>
+        </select>
+
+        <label for="defense">Defensive Category:</label>
+        <select id="defense">
+            <option value="inept">Inept</option>
+            <option value="semi-inept">Semi-Inept</option>
+            <option value="average">Average</option>
+            <option value="semi-staunch">Semi-Staunch</option>
+            <option value="staunch">Staunch</option>
+        </select>
+
+        <div>
+            <label><input type="radio" name="diceOption" value="offense+2"> Is the offense qualities greater than +2?</label><br>
+            <label><input type="radio" name="diceOption" value="defense+2"> Is the defensive qualities greater than +2 over the offense?</label><br>
+            <label><input type="radio" name="diceOption" value="within+2"> Both ratings are within 2</label><br>
+        </div>
+
+        <div>
+            <label><input type="checkbox" id="electric-kicker"> Electric Kick/Punt Return</label><br>
+            <label><input type="checkbox" id="outstanding-kicker"> Outstanding Kicker</label>
+        </div>
+
+        <button onclick="rollDice()">Roll Dice</button>
+    </div>
+
+    <div class="offensive-rating" id="offensive-rating">Offensive Rating: -</div>
+    <div class="result" id="bonus-score">Electric Kick/Punt Return Bonus: -</div>
+    <div class="result" id="outstanding-bonus">Outstanding Kicker Bonus: -</div>
+    <div class="result" id="result">Score: -</div>
+    <div class="result" id="die-used">Die Used: -</div>
+
+        <script>
+        const diceFaces = {
+            dull: [0, 0, 10, 10, 10, 20],
+            "semi-dull": [0, 10, 10, 10, 20, 20],
+            average: [10, 10, 10, 20, 20, 30],
+            "semi-prolific": [10, 20, 20, 30, 30, 30],
+            prolific: [10, 20, 30, 30, 30, 40],
+        };
+
+        const whiteDie = [0, 3, 4, 5, 6, 7];
+        const yellowDie = [1, 3, 7, 8, 8, 9];
+        const pinkDie = [0, 1, 1, 3, 3, 4];
+        const bonusDie = [0, 0, 0, 3, 3, 7];
+
+        const adjustOffense = (offense, defense) => {
+            const order = ["dull", "semi-dull", "average", "semi-prolific", "prolific"];
+            let index = order.indexOf(offense);
+
+            if (defense === "inept") index = Math.min(index + 2, order.length - 1);
+            else if (defense === "semi-inept") index = Math.min(index + 1, order.length - 1);
+            else if (defense === "semi-staunch") index = Math.max(index - 1, 0);
+            else if (defense === "staunch") index = Math.max(index - 2, 0);
+
+            return order[index];
+        };
+
+        const rollDie = (faces) => {
+            return faces[Math.floor(Math.random() * faces.length)];
+        };
+
+        const rollDice = () => {
+            const offenseCategory = document.getElementById("offense").value;
+            const defenseCategory = document.getElementById("defense").value;
+            const diceOption = document.querySelector('input[name="diceOption"]:checked');
+            const electricKicker = document.getElementById("electric-kicker").checked;
+            const outstandingKicker = document.getElementById("outstanding-kicker").checked;
+
+            const adjustedOffense = adjustOffense(offenseCategory, defenseCategory);
+            const firstNumber = rollDie(diceFaces[adjustedOffense]);
+
+            let dieUsed = "White Die";
+            let secondDie = whiteDie;
+
+            if (diceOption && diceOption.value === "offense+2") {
+                dieUsed = "Yellow Die";
+                secondDie = yellowDie;
+            } else if (diceOption && diceOption.value === "defense+2") {
+                dieUsed = "Pink Die";
+                secondDie = pinkDie;
+            } else if (diceOption && diceOption.value === "within+2") {
+                dieUsed = "White Die";
+                secondDie = whiteDie;
+            }
+
+            const secondNumber = rollDie(secondDie);
+            let bonusValue = 0;
+
+            if (electricKicker) {
+                bonusValue = rollDie(bonusDie);
+                document.getElementById("bonus-score").textContent = `Electric Kick/Punt Return Bonus: ${bonusValue}`;
+            } else {
+                document.getElementById("bonus-score").textContent = `Electric Kick/Punt Return Bonus: -`;
+            }
+
+            let outstandingBonus = 0;
+            if (outstandingKicker && Math.random() < 0.5) {
+                outstandingBonus = 3;
+                document.getElementById("outstanding-bonus").textContent = `Outstanding Kicker Bonus: ${outstandingBonus}`;
+            } else {
+                document.getElementById("outstanding-bonus").textContent = `Outstanding Kicker Bonus: -`;
+            }
+
+            const totalScore = firstNumber + secondNumber + bonusValue + outstandingBonus;
+
+            document.getElementById("offensive-rating").textContent = `Offensive Rating: ${adjustedOffense}`;
+            document.getElementById("result").textContent = `Score: ${totalScore}`;
+            document.getElementById("die-used").textContent = `Die Used: ${dieUsed}`;
+        };
+    </script>
+</body>
+</html>
+
